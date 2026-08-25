@@ -1,0 +1,18 @@
+geometry:
+  type: circular
+  L: 0.150
+  d: 0.008
+
+material:
+  E: 200e9
+  sigma_f_prime: 800e6
+  b: -0.12
+  sigma_uts: 600e6
+
+load:
+  F_a: 25.0
+  R: -1.0
+
+analysis:
+  method: linear
+  N_design: 1000000

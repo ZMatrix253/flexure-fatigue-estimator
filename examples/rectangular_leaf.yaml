@@ -1,0 +1,19 @@
+geometry:
+  type: rectangular
+  L: 0.100          # m
+  b: 0.020          # m
+  h: 0.002          # m
+
+material:
+  E: 200e9          # Pa (Young's modulus)
+  sigma_f_prime: 800e6
+  b: -0.12
+  sigma_uts: 600e6
+
+load:
+  F_a: 40.0         # N (force amplitude)
+  R: -1.0           # load ratio
+
+analysis:
+  method: nonlinear # "linear" or "nonlinear"
+  N_design: 1000000
