@@ -1,5 +1,5 @@
 """
-main.py – Simple end-to-end example for Flexure Fatigue Estimator (v0.1)
+main.py – End-to-end example for Flexure Fatigue Estimator (v0.1 + nonlinear)
 """
 
 from core.geometry import RectangularCantilever
@@ -9,7 +9,7 @@ from core.fatigue import MaterialFatigue, calculate_fatigue
 
 def main():
     # ------------------------------------------------------------------
-    # 1. Geometry (rectangular cantilever leaf spring)
+    # 1. Geometry
     # ------------------------------------------------------------------
     geometry = RectangularCantilever(
         L=0.100,   # 100 mm
@@ -18,57 +18,62 @@ def main():
     )
 
     # ------------------------------------------------------------------
-    # 2. Loading (constant amplitude cyclic tip force)
+    # 2. Loading
     # ------------------------------------------------------------------
-    F_a = 10.0    # Force amplitude in Newtons
-    R = -1.0      # Fully reversed (R = -1)
+    F_a = 40.0     # Force amplitude [N]  (increased to show nonlinearity)
+    R = -1.0       # Fully reversed
 
     # ------------------------------------------------------------------
-    # 3. Material (example values – replace with real data)
+    # 3. Material
     # ------------------------------------------------------------------
+    E = 200e9      # Young’s modulus [Pa] – required for nonlinear
     material = MaterialFatigue(
         sigma_f_prime=800e6,  # 800 MPa
         b=-0.12,
         sigma_uts=600e6       # 600 MPa
     )
-
-    N_design = 1_000_000      # Target design life
-
-    # ------------------------------------------------------------------
-    # 4. Run analysis
-    # ------------------------------------------------------------------
-    cycle = solve_stress_cycle(geometry, F_a=F_a, R=R)
-    result = calculate_fatigue(cycle, material, N_design=N_design)
+    N_design = 1_000_000
 
     # ------------------------------------------------------------------
-    # 5. Print summary
+    # 4. Run both analyses
     # ------------------------------------------------------------------
-    print("=" * 60)
-    print("       FLEXURE FATIGUE ESTIMATOR – v0.1 Results")
-    print("=" * 60)
+    cycle_lin = solve_stress_cycle(geometry, F_a=F_a, R=R, method="linear")
+    result_lin = calculate_fatigue(cycle_lin, material, N_design=N_design)
+
+    cycle_nl = solve_stress_cycle(
+        geometry, F_a=F_a, R=R, method="nonlinear", E=E
+    )
+    result_nl = calculate_fatigue(cycle_nl, material, N_design=N_design)
+
+    # ------------------------------------------------------------------
+    # 5. Print comparison
+    # ------------------------------------------------------------------
+    print("=" * 70)
+    print("          FLEXURE FATIGUE ESTIMATOR – Linear vs Nonlinear")
+    print("=" * 70)
 
     print("\nGeometry:")
-    print(f"  L = {geometry.L*1000:.1f} mm")
-    print(f"  b = {geometry.b*1000:.1f} mm")
-    print(f"  h = {geometry.h*1000:.1f} mm")
+    print(f"  L = {geometry.L*1000:.1f} mm,  b = {geometry.b*1000:.1f} mm,  h = {geometry.h*1000:.1f} mm")
+    print(f"  E = {E/1e9:.0f} GPa")
 
     print("\nLoading:")
-    print(f"  F_a = {F_a:.1f} N")
-    print(f"  R   = {R}")
+    print(f"  F_a = {F_a:.1f} N,   R = {R}")
 
-    print("\nStress Cycle:")
-    print(f"  σ_max = {cycle.sigma_max/1e6:7.1f} MPa")
-    print(f"  σ_min = {cycle.sigma_min/1e6:7.1f} MPa")
-    print(f"  σ_a   = {cycle.sigma_a/1e6:7.1f} MPa")
-    print(f"  σ_m   = {cycle.sigma_m/1e6:7.1f} MPa")
+    print("\n" + "-" * 70)
+    print(f"{'Quantity':<28} {'Linear':>15} {'Nonlinear':>15}")
+    print("-" * 70)
 
-    print("\nFatigue Result (Basquin + Goodman):")
-    print(f"  Equivalent stress σ_ar = {result.sigma_ar/1e6:.1f} MPa")
-    print(f"  Estimated life N_f     = {result.N_f:.3e} cycles")
-    print(f"  Safety factor (life)   = {result.safety_factor_life:.2f}")
-    print(f"  Safety factor (stress) = {result.safety_factor_stress:.2f}")
+    print(f"{'σ_max (MPa)':<28} {cycle_lin.sigma_max/1e6:15.1f} {cycle_nl.sigma_max/1e6:15.1f}")
+    print(f"{'σ_min (MPa)':<28} {cycle_lin.sigma_min/1e6:15.1f} {cycle_nl.sigma_min/1e6:15.1f}")
+    print(f"{'σ_a   (MPa)':<28} {cycle_lin.sigma_a/1e6:15.1f} {cycle_nl.sigma_a/1e6:15.1f}")
+    print(f"{'σ_m   (MPa)':<28} {cycle_lin.sigma_m/1e6:15.1f} {cycle_nl.sigma_m/1e6:15.1f}")
+    print(f"{'σ_ar  (MPa)':<28} {result_lin.sigma_ar/1e6:15.1f} {result_nl.sigma_ar/1e6:15.1f}")
+    print(f"{'Life N_f (cycles)':<28} {result_lin.N_f:15.3e} {result_nl.N_f:15.3e}")
+    print(f"{'Safety factor (life)':<28} {result_lin.safety_factor_life:15.2f} {result_nl.safety_factor_life:15.2f}")
+    print(f"{'Safety factor (stress)':<28} {result_lin.safety_factor_stress:15.2f} {result_nl.safety_factor_stress:15.2f}")
 
-    print("\n" + "=" * 60)
+    print("-" * 70)
+    print()
 
 
 if __name__ == "__main__":
