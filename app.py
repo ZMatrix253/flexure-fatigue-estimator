@@ -75,6 +75,31 @@ if st.sidebar.button("Run Analysis", type="primary"):
     col3.metric("Predicted life", f"{result.N_f:.2e} cycles")
     col4.metric("Safety factor (life)", f"{result.safety_factor_life:.2f}")
 
+    from core.report import generate_markdown_report
+
+    # ... after calculation ...
+
+    report_md = generate_markdown_report(
+        geometry=geometry,
+        material=material,
+        cycle=cycle,
+        result=result,
+        E=E * 1e9,
+        F_a=F_a,
+        R=R,
+        method=method,
+        N_design=N_design,
+        project_title="Flexure Fatigue Analysis",
+        author="Your Name",          # change this
+    )
+
+    st.download_button(
+        label="Download Engineering Report (Markdown)",
+        data=report_md,
+        file_name="ffe_report.md",
+        mime="text/markdown",
+    )
+
     # Pass / Fail
     if result.N_f >= N_design:
         st.success(f"PASS – Life exceeds target ({N_design:.0e} cycles)")
